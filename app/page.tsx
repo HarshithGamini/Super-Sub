@@ -1,101 +1,144 @@
-import Image from "next/image";
+'use client';
+import { TextArea, Button } from "@radix-ui/themes";
+import { ChangeEvent, useState, useEffect } from "react";
+
+// Expanded superscript mappings
+const superscriptMap: { [key: string]: string } = {
+  '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+  'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᶢ', 'h': 'ʰ', 'i': 'ⁱ', 'j': 'ʲ',
+  'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ', 'q': 'ᑫ', 'r': 'ʳ', 's': 'ˢ', 't': 'ᵗ',
+  'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
+  'A': 'ᴬ', 'B': 'ᴮ', 'C': 'ᶜ', 'D': 'ᴰ', 'E': 'ᴱ', 'F': 'ᶠ', 'G': 'ᴳ', 'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ',
+  'K': 'ᴷ', 'L': 'ᴸ', 'M': 'ᴹ', 'N': 'ᴺ', 'O': 'ᴼ', 'P': 'ᴾ', 'Q': 'Q', 'R': 'ᴿ', 'S': 'ˢ', 'T': 'ᵀ',
+  'U': 'ᵁ', 'V': 'ⱽ', 'W': 'ᵂ', 'X': 'ˣ', 'Y': 'ʸ', 'Z': 'ᶻ',
+  '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾', '.': '˙', '/': '⸍', ',': '‚', ':': ':', '*': '∗',
+  '!': 'ᵎ', '?': 'ˀ',
+};
+
+// Expanded subscript mappings
+const subscriptMap: { [key: string]: string } = {
+  '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+  'a': 'ₐ', 'b': 'ᵦ', 'c': '𝒸', 'd': '𝒹', 'e': 'ₑ', 'f': '𝒻', 'g': '𝓰', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ',
+  'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ', 'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ',
+  'v': 'ᵥ', 'x': 'ₓ', 'y': 'ᵧ', 'z': '𝓏',
+  '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎', '.': '․', '/': '⸍', ',': '‚', ':': ':', '*': '∗',
+};
+
+// Options for unmapped characters
+type UnmappedOption = 'keep' | 'omit' | 'placeholder';
+
+// Convert text based on the chosen map and unmapped option
+const convertText = (
+  text: string,
+  map: { [key: string]: string },
+  unmappedOption: UnmappedOption,
+  placeholder: string = '�'
+): string => {
+  return text
+    .split('')
+    .map((char) => {
+      if (map[char]) return map[char];
+      if (unmappedOption === 'omit') return '';
+      if (unmappedOption === 'placeholder') return placeholder;
+      return char; // 'keep'
+    })
+    .join('');
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [input, setInput] = useState("");
+  const [superscript, setSuperscript] = useState("");
+  const [subscript, setSubscript] = useState("");
+  const [unmappedOption, setUnmappedOption] = useState<UnmappedOption>('keep');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Update outputs whenever input or unmappedOption changes
+  useEffect(() => {
+    setSuperscript(convertText(input, superscriptMap, unmappedOption));
+    setSubscript(convertText(input, subscriptMap, unmappedOption));
+  }, [input, unmappedOption]);
+
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleOptionChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    setUnmappedOption(e.target.value as UnmappedOption);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert("Copied to clipboard!");
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-6 flex flex-col items-center">
+      <h1 className="text-3xl font-bold mb-6 text-center">Super-Sub</h1>
+      <div className="w-full max-w-4xl">
+        {/* Input Area */}
+        <div className="mb-6">
+          <TextArea
+            className="w-full h-32 p-2 text-black"
+            placeholder="Type or Paste your content here"
+            value={input}
+            onChange={handleChange}
+            aria-label="Input text"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Unmapped Characters Option */}
+        <div className="mb-6">
+          <label htmlFor="unmapped-option" className="mr-2">
+            Handle unmapped characters:
+          </label>
+          <select
+            id="unmapped-option"
+            value={unmappedOption}
+            onChange={handleOptionChange}
+            className="p-2 bg-gray-800 text-white"
+          >
+            <option value="keep">Keep as is</option>
+            <option value="omit">Omit</option>
+            <option value="placeholder">Replace with �</option>
+          </select>
+        </div>
+
+        {/* Output Areas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Superscript Output */}
+          <div>
+            <h2 className="text-xl font-semibold mb-2">Superscript Generator</h2>
+            <TextArea
+              className="w-full h-32 p-2 mb-2 text-black"
+              value={superscript}
+              readOnly
+              aria-label="Superscript output"
+            />
+            <Button
+              onClick={() => copyToClipboard(superscript)}
+              className="mt-2 p-2 bg-blue-500 text-white"
+            >
+              Copy Superscript
+            </Button>
+          </div>
+
+          {/* Subscript Output */}
+          <div>
+            <h2 className="text-xl font-semibold mb-2">Subscript Generator</h2>
+            <TextArea
+              className="w-full h-32 p-2 mb-2 text-black"
+              value={subscript}
+              readOnly
+              aria-label="Subscript output"
+            />
+            <Button
+              onClick={() => copyToClipboard(subscript)}
+              className="mt-2 p-2 bg-blue-500 text-white"
+            >
+              Copy Subscript
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
